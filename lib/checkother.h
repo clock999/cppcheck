@@ -192,6 +192,8 @@ private:
     void overlappingWriteUnion(const Token *tok);
     void overlappingWriteFunction(const Token *tok, const std::string& funcname);
 
+    void checkSuspiciousComma();
+
     // Error messages..
     void checkComparisonFunctionIsAlwaysTrueOrFalseError(const Token* tok, const std::string &functionName, const std::string &varName, bool result);
     void checkCastIntToCharAndBackError(const Token *tok, const std::string &strFunctionName);

@@ -4367,6 +4367,33 @@ void CheckOther::overlappingWriteFunction(const Token *tok, const std::string& f
     reportError(tok, Severity::error, "overlappingWriteFunction", "Overlapping read/write in " + funcname + "() is undefined behavior");
 }
 
+void CheckOther::checkSuspiciousComma()
+{
+    if (!mSettings->severity.isEnabled(Severity::style)) {
+        return;
+    }
+
+    logChecker("CheckOpComma::warnSuspiciousComma");
+
+    for (const Token* tok = mTokenizer->list.front(); tok; tok = tok->next()) {
+        if (tok->str() == "," && tok->isBinaryOp()) {
+            const Token * parent = tok->astParent();
+            if (parent && (Token::simpleMatch(parent->previous(), "if (") ||
+                           Token::simpleMatch(parent->previous(), "while ("))) {
+                if (tok->previous()->str() == ")" && tok->previous()->link()->str() == "(") {
+                    const Function * func = tok->previous()->link()->previous()->function();
+                    if (func && func->initArgCount > 0) {
+                        const Token * r_op = tok->astOperand2();
+                        if (r_op && r_op->hasKnownValue()) {
+                            reportError(tok, Severity::style, "warnSuspiciousComma", "There is an suspicious comma expression used as a condition.");
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 void CheckOther::runChecks(const Tokenizer &tokenizer, ErrorLogger *errorLogger)
 {
     CheckOther checkOther(&tokenizer, &tokenizer.getSettings(), errorLogger);
@@ -4414,6 +4441,7 @@ void CheckOther::runChecks(const Tokenizer &tokenizer, ErrorLogger *errorLogger)
     checkOther.checkAccessOfMovedVariable();
     checkOther.checkModuloOfOne();
     checkOther.checkOverlappingWrite();
+    checkOther.checkSuspiciousComma();
 }
 
 void CheckOther::getErrorMessages(ErrorLogger *errorLogger, const Settings *settings) const
